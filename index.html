@@ -137,7 +137,7 @@
 
   .chord-row{display:grid;gap:7px}
   .chord{
-    position:relative;border-radius:10px;padding:11px 5px 10px;text-align:center;cursor:pointer;
+    position:relative;border-radius:10px;padding:24px 5px 10px;text-align:center;cursor:pointer;
     transition:transform .1s,border-color .14s,background .14s,box-shadow .14s;
     border:1px solid var(--line-soft);
   }
@@ -192,9 +192,9 @@
     padding:7px 16px;border-radius:20px;cursor:pointer;transition:all .15s}
   .hold-btn:hover{border-color:var(--brass);color:var(--brass)}
   .hold-btn.active{background:var(--brass);color:#fff;border-color:var(--brass-d)}
-  .chord .add{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;
+  .chord .add{position:absolute;top:5px;right:5px;width:17px;height:17px;border-radius:50%;
     border:1px solid var(--line);background:var(--bg);color:var(--ink-dim);
-    font-size:12px;line-height:16px;text-align:center;opacity:0;transition:opacity .14s;
+    font-size:12px;line-height:15px;text-align:center;opacity:0;transition:opacity .14s;
     font-family:"Spline Sans Mono",monospace;cursor:pointer}
   .chord:hover .add{opacity:1}
   .chord .add:hover{color:#fff;background:var(--brass);border-color:var(--brass)}
@@ -267,7 +267,7 @@
 
   @media(max-width:600px){
     .chord-row{gap:5px}
-    .chord{padding:8px 3px;border-radius:8px}
+    .chord{padding:22px 3px 8px;border-radius:8px}
     .chord .cname{font-size:16px}
     .chord .roman{font-size:11px}
     .chord .notes{display:none}
@@ -521,14 +521,22 @@ let hold = false;           // when true, keep chord lit on the keys
 let currentProgIdx = -1;    // selected common progression
 let keyEls = {}, kbTimer;
 
-// light up keyboard keys for the given notes
+// fold a chord (as a whole) into the keyboard window [48..72] so the shape/inversion stays intact
+function kbFold(midis){
+  let n = midis.slice().sort((a,b)=>a-b);
+  while(n.length && n[n.length-1] > 72) n = n.map(x=>x-12);
+  while(n.length && n[0] < 48) n = n.map(x=>x+12);
+  return n;
+}
+// light up keyboard keys for the given notes (sound stays in its real register; display is folded)
 function highlightKeys(midis, dur=1.0){
   if(!keyEls || !Object.keys(keyEls).length) return;
+  const shown = kbFold(midis);
   Object.values(keyEls).forEach(el=>el.classList.remove('lit'));
-  midis.forEach(m=>{ const el=keyEls[m]; if(el) el.classList.add('lit'); });
+  shown.forEach(m=>{ const el=keyEls[m]; if(el) el.classList.add('lit'); });
   clearTimeout(kbTimer);
   if(hold) return;                                  // keep lit until the next chord
-  const held = midis.slice();
+  const held = shown.slice();
   kbTimer = setTimeout(()=>{ held.forEach(m=>{ const el=keyEls[m]; if(el) el.classList.remove('lit'); }); }, Math.max(2600, dur*1000));
 }
 
@@ -799,7 +807,7 @@ buildKeyboard(); buildCircle(); render();
 /* ─── piano keyboard (visualizer) ─── */
 function buildKeyboard(){
   const wrap=document.getElementById('kb-wrap');
-  const LOW=48, HIGH=88;                 // C3 .. E6 — covers all chords incl. inversions
+  const LOW=48, HIGH=72;                 // C3 .. C5 — 2 octaves, thicker keys (display folds to fit)
   const WHITE=new Set([0,2,4,5,7,9,11]);
   const kb=document.createElement('div'); kb.className='keyboard';
   const whites=[];
